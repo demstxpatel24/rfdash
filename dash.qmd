@@ -1,0 +1,315 @@
+--- 
+title: "Relational Futures Command Center"
+author: ""
+format: 
+  dashboard:
+    theme: lux
+    preview:
+      port: 1234
+    include-in-header:
+      text: |
+        <link rel="shortcut icon" href="favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+---
+
+&nbsp;
+&nbsp;
+&nbsp;
+
+```{python}
+import plotly.express as px
+import requests
+import json
+import pandas as pd
+import polars as pl
+import polars.selectors as cs
+from itables import show, JavascriptFunction
+```
+
+# Home
+
+## Row {height=25%}
+
+```{python}
+#| content: valuebox
+#| title: "Active Volunteers"
+#| icon: people
+#| color: primary
+dict(
+  value = 1000
+)
+```
+
+```{python}
+#| content: valuebox
+#| title: "Network Size"
+#| icon: person-add
+#| color: primary
+dict(
+  value = 3500
+)
+```
+
+## Row {height=25%}
+
+```{python}
+#| content: valuebox
+#| title: "Positive IDs"
+#| icon: person-up
+#| color: primary
+dict(
+  value = 900
+)
+```
+
+
+```{python}
+#| content: valuebox
+#| title: "Votes Logged"
+#| icon: person-check
+#| color: primary
+dict(
+  value = 300
+)
+```
+
+# Volunteers
+
+## {.toolbar}
+
+Imagine filters here
+
+## Row {.tabset}
+
+### Profiles
+
+```{python}
+df = pl.DataFrame({
+  'Name': ['Person A','Person B','Person C'],
+  'Network Size': [100, 72, 35],
+  'Surveyed': [1, 50, 22],
+  'Vote Plans': [0, 25, 20],
+  'Voted': [0, 0, 0]
+})
+
+show(df)
+```
+
+### Onboarding
+
+```{python}
+#| title: Onboading Funnel by Cohort
+df = pl.DataFrame({
+  'status' : ['Sign Up', 'Self ID', 'Add Network', 'First Contact', 'First Survey'] * 3,
+  'cohort' : ['May'] * 5 + ['June'] * 5 + ['July'] * 5,
+  'pct_val' : [1,0.85,0.8,0.7,0.6] + [1,0.76,0.5,0.4,0.4] + [1,0.9,0.8,0.8,0.8]
+})
+
+fig = px.line(df, x="status", y="pct_val",
+             color='cohort', #barmode='group',
+             labels = {'status': '', 
+                       'pct_val':'', 
+                       'cohort': ''},
+            color_discrete_sequence=px.colors.qualitative.T10,
+             height=400)
+fig.update_yaxes(range=[0,1])
+```
+
+### Geographic
+
+```{python}
+r = requests.get('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
+counties = json.loads(r.text)
+target_states = ['37']
+counties['features'] = [f for f in counties['features'] if f['properties']['STATE'] in target_states]
+
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv', dtype={'fips': str})
+
+fig_nc = px.choropleth(df, 
+                    geojson=counties, 
+                    locations='fips', 
+                    color='unemp',
+                    color_continuous_scale='Viridis',
+                    range_color=(0, 12),
+                    scope='usa',
+                    labels={'unemp': 'Volunteers'},
+                    fitbounds='locations'
+                    )
+fig_nc.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+```
+
+# Network
+
+## Row {.tabset}
+
+### Demographics
+
+#### Row {height=45%}
+
+```{python}
+#| title: Age Distribution
+df = pl.DataFrame({
+  'age_bin' : ['<25', '<40', '<60', '>=60'] * 3,
+  'grp_bin' : ['Network'] * 4 + ['Likely D'] * 4 + ['Registered'] * 4,
+  'pct_val' : [0.4,0.2,0.2,0.2] + [0.3,0.3,0.3,0.1] + [0.25,0.25,0.25,0.25]
+})
+
+fig = px.bar(df, x="age_bin", y="pct_val",
+             color='grp_bin', barmode='group',
+             labels = {'age_bin': '', 
+                       'pct_val':'', 
+                       'grp_bin': ''},
+             color_discrete_sequence=px.colors.qualitative.T10,
+             height=400)
+             
+fig.show()
+
+```
+
+```{python}
+#| title: Gender Distribution
+df = pl.DataFrame({
+  'age_bin' : ['F','M'] * 3,
+  'grp_bin' : ['Network'] * 2 + ['Likely D'] * 2 + ['Registered'] * 2,
+  'pct_val' : [0.6,0.4] + [0.5,0.5] + [0.4,0.6]
+})
+
+fig = px.bar(df, x="age_bin", y="pct_val",
+             color='grp_bin', barmode='group',
+             labels = {'age_bin': '', 
+                       'pct_val':'', 
+                       'grp_bin': ''},
+            color_discrete_sequence=px.colors.qualitative.T10,
+             height=400)
+             
+fig.show()
+
+```
+
+#### Row {height=45%}
+
+```{python}
+#| title: Race Distribution
+df = pl.DataFrame({
+  'age_bin' : ['W', 'B', 'H', 'A'] * 3,
+  'grp_bin' : ['Network'] * 4 + ['Likely D'] * 4 + ['Registered'] * 4,
+  'pct_val' : [0.4,0.2,0.2,0.2] + [0.3,0.3,0.3,0.1] + [0.25,0.25,0.25,0.25]
+})
+
+fig = px.bar(df, x="age_bin", y="pct_val",
+             color='grp_bin', barmode='group',
+             labels = {'age_bin': '', 
+                       'pct_val':'', 
+                       'grp_bin': ''},
+            color_discrete_sequence=px.colors.qualitative.T10,
+             height=400)
+             
+fig.show()
+
+```
+
+```{python}
+#| title: Modeled Support Distribution
+df = pl.DataFrame({
+  'age_bin' : ['>90%', '>75%', '>50%', '<50%'] * 3,
+  'grp_bin' : ['Network'] * 4 + ['Likely D'] * 4 + ['Registered'] * 4,
+  'pct_val' : [0.4,0.2,0.2,0.2] + [0.3,0.3,0.3,0.1] + [0.25,0.25,0.25,0.25]
+})
+
+fig = px.bar(df, x="age_bin", y="pct_val",
+             color='grp_bin', barmode='group',
+             labels = {'age_bin': '', 
+                       'pct_val':'', 
+                       'grp_bin': ''},
+            color_discrete_sequence=px.colors.qualitative.T10,
+             height=400)
+             
+fig.show()
+```
+
+### Geographic
+
+```{python}
+fig_nc
+```
+
+# Surveys
+
+::: {.callout-caution}
+## Under Construction
+
+This would have similar information to the Votes tab earlier in the cycle
+:::
+
+# Votes 
+
+## Row
+
+```{python}
+i = [1,2,3,4,5]
+
+df = pl.DataFrame({
+  'Precinct': i,
+  'Target': [100*i for i in i],
+  'Voted': [10*i for i in i],
+  'Reach Commit': [80,4,3,200,1],
+  'VAN Commit': [3,9,8,4,2]
+})
+
+df1 = (
+  df
+  .with_columns( 
+    pl.col('Voted').alias('Voted Percent of Goal')/
+    pl.col('Target'),
+    (pl.col('Voted') + pl.col('Reach Commit') + pl.col('VAN Commit')).alias('Combined Percent of Goal')/
+    pl.col('Target') 
+    )
+    .with_columns( cs.contains('Percent').round(2) )
+)
+
+df1_agg = (
+  df
+  .with_columns( Precinct = pl.lit('Total') )
+  .group_by(['Precinct'])
+  .agg( cs.all().sum() )
+  .with_columns( 
+    pl.col('Voted').alias('Voted Percent of Goal')/
+    pl.col('Target'),
+    (pl.col('Voted') + pl.col('Reach Commit') + pl.col('VAN Commit')).alias('Combined Percent of Goal')/
+    pl.col('Target') 
+    )
+    .with_columns(cs.contains('Percent').round(2))
+)
+
+show(df1, 
+     buttons = ['copy', 'excel'],
+         columnDefs=[
+        {
+            "targets": "_all",
+            "createdCell": JavascriptFunction(
+                """
+function (td, cellData, rowData, row, col) {
+    if (cellData < 0.5) {
+        $(td).css('color', 'darkred')
+    }
+    else if (cellData < 0.75) {
+        $(td).css('color', 'gold')
+    }
+    else if (cellData < 1) {
+      $(td).css('color', 'darkgreen')
+    }
+}
+"""
+            ),
+        }
+    ],)
+
+show(df1_agg)
+```
+
+## Row
+
+Notes:
+
+1. Data last updated on YYYY-MM-DD
+2. `Reach Commit` and `VAN Commit` fields reflect positive IDs with voter plans who are not already included in the vote total
