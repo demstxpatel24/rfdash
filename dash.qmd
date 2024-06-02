@@ -75,10 +75,6 @@ dict(
 
 # Volunteers
 
-## {.toolbar}
-
-Imagine filters here
-
 ## Row {.tabset}
 
 ### Profiles
@@ -243,7 +239,30 @@ This would have similar information to the Votes tab earlier in the cycle
 
 # Votes 
 
-## Row
+## Row {height=40%}
+
+```{python}
+#| content: valuebox
+#| title: "Positive IDs"
+#| icon: person-up
+#| color: primary
+dict(
+  value = '464 (31%)'
+)
+```
+
+
+```{python}
+#| content: valuebox
+#| title: "Confirmed Votes"
+#| icon: person-check
+#| color: primary
+dict(
+  value = '150 (10%)'
+)
+```
+
+## Row {height=60%}
 
 ```{python}
 i = [1,2,3,4,5]
@@ -267,19 +286,19 @@ df1 = (
     .with_columns( cs.contains('Percent').round(2) )
 )
 
-df1_agg = (
-  df
-  .with_columns( Precinct = pl.lit('Total') )
-  .group_by(['Precinct'])
-  .agg( cs.all().sum() )
-  .with_columns( 
-    pl.col('Voted').alias('Voted Percent of Goal')/
-    pl.col('Target'),
-    (pl.col('Voted') + pl.col('Reach Commit') + pl.col('VAN Commit')).alias('Combined Percent of Goal')/
-    pl.col('Target') 
-    )
-    .with_columns(cs.contains('Percent').round(2))
-)
+# df1_agg = (
+#   df
+#   .with_columns( Precinct = pl.lit('Total') )
+#   .group_by(['Precinct'])
+#   .agg( cs.all().sum() )
+#   .with_columns( 
+#     pl.col('Voted').alias('Voted Percent of Goal')/
+#     pl.col('Target'),
+#     (pl.col('Voted') + pl.col('Reach Commit') + pl.col('VAN Commit')).alias('Combined Percent of Goal')/
+#     pl.col('Target') 
+#     )
+#     .with_columns(cs.contains('Percent').round(2))
+# )
 
 show(df1, 
      buttons = ['copy', 'excel'],
@@ -304,7 +323,7 @@ function (td, cellData, rowData, row, col) {
         }
     ],)
 
-show(df1_agg)
+# show(df1_agg)
 ```
 
 ## Row
