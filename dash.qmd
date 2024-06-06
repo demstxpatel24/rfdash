@@ -23,7 +23,12 @@ import json
 import pandas as pd
 import polars as pl
 import polars.selectors as cs
+import geopandas as gpd
 from itables import show, JavascriptFunction
+```
+
+```{python}
+df_pct = gpd.read_parquet('nc01.parquet')
 ```
 
 # Home
@@ -36,7 +41,7 @@ from itables import show, JavascriptFunction
 #| icon: people
 #| color: primary
 dict(
-  value = 1000
+  value = 2460
 )
 ```
 
@@ -46,9 +51,10 @@ dict(
 #| icon: person-add
 #| color: primary
 dict(
-  value = 3500
+  value = '29,740'
 )
 ```
+
 
 ## Row {height=25%}
 
@@ -58,7 +64,7 @@ dict(
 #| icon: person-up
 #| color: primary
 dict(
-  value = 900
+  value = '19,860'
 )
 ```
 
@@ -69,7 +75,7 @@ dict(
 #| icon: person-check
 #| color: primary
 dict(
-  value = 300
+  value = '15,472'
 )
 ```
 
@@ -82,10 +88,10 @@ dict(
 ```{python}
 df = pl.DataFrame({
   'Name': ['Person A','Person B','Person C'],
-  'Network Size': [100, 72, 35],
-  'Surveyed': [1, 50, 22],
-  'Vote Plans': [0, 25, 20],
-  'Voted': [0, 0, 0]
+  'Network Size': [25, 32, 12],
+  'Surveyed': [20, 16, 11],
+  'Vote Plans': [18, 11, 11],
+  'Voted': [2, 5, 11]
 })
 
 show(df)
@@ -114,24 +120,31 @@ fig.update_yaxes(range=[0,1])
 ### Geographic
 
 ```{python}
-r = requests.get('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
-counties = json.loads(r.text)
-target_states = ['37']
-counties['features'] = [f for f in counties['features'] if f['properties']['STATE'] in target_states]
-
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv', dtype={'fips': str})
-
-fig_nc = px.choropleth(df, 
-                    geojson=counties, 
-                    locations='fips', 
-                    color='unemp',
-                    color_continuous_scale='Viridis',
-                    range_color=(0, 12),
-                    scope='usa',
-                    labels={'unemp': 'Volunteers'},
-                    fitbounds='locations'
-                    )
-fig_nc.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+#r = requests.get('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
+#counties = json.loads(r.text)
+#target_states = ['37']
+#counties['features'] = [f for f in counties['features'] if f['properties']['STATE'] in target_states]
+#
+#df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv', dtype={'fips': str})
+#
+#fig_nc = px.choropleth(df, 
+#                    geojson=counties, 
+#                    locations='fips', 
+#                    color='unemp',
+#                    color_continuous_scale='Viridis',
+#                    range_color=(0, 12),
+#                    scope='usa',
+#                    labels={'unemp': 'Volunteers'},
+#                    fitbounds='locations'
+#                    )
+#fig_nc.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+df_pct.explore(
+    column = 'Vol',
+    tooltop = 'Vol',
+    popup = True,
+    cmap="Blues",  # use "Set1" matplotlib colormap
+    style_kwds=dict(color="black")
+)
 ```
 
 # Network
@@ -226,7 +239,13 @@ fig.show()
 ### Geographic
 
 ```{python}
-fig_nc
+df_pct.explore(
+    column = 'Vot',
+    tooltop = 'Vol',
+    popup = True,
+    cmap="Blues",  # use "Set1" matplotlib colormap
+    style_kwds=dict(color="black")
+)
 ```
 
 # Surveys
@@ -237,7 +256,7 @@ fig_nc
 This would have similar information to the Votes tab earlier in the cycle
 :::
 
-# Votes 
+# Votes
 
 ## Row {height=40%}
 
@@ -247,7 +266,7 @@ This would have similar information to the Votes tab earlier in the cycle
 #| icon: person-up
 #| color: primary
 dict(
-  value = '464 (31%)'
+  value = '19,860 (67%)'
 )
 ```
 
@@ -258,22 +277,22 @@ dict(
 #| icon: person-check
 #| color: primary
 dict(
-  value = '150 (10%)'
+  value = '15,472 (52%)'
 )
 ```
 
 ## Row {height=60%}
 
 ```{python}
-i = [1,2,3,4,5]
 
-df = pl.DataFrame({
-  'Precinct': i,
-  'Target': [100*i for i in i],
-  'Voted': [10*i for i in i],
-  'Reach Commit': [80,4,3,200,1],
-  'VAN Commit': [3,9,8,4,2]
-})
+df = (
+  df_pct
+  .assign(Precinct = lambda d: d.prec_id + ' ' + d.enr_desc)
+  .rename(columns = {'Reach': 'Reach Commit', 'VAN': 'VAN Commit'})
+  [['Precinct','Target','Voted','Reach Commit','VAN Commit']]
+)
+
+df = pl.from_pandas(df)
 
 df1 = (
   df
@@ -286,19 +305,7 @@ df1 = (
     .with_columns( cs.contains('Percent').round(2) )
 )
 
-# df1_agg = (
-#   df
-#   .with_columns( Precinct = pl.lit('Total') )
-#   .group_by(['Precinct'])
-#   .agg( cs.all().sum() )
-#   .with_columns( 
-#     pl.col('Voted').alias('Voted Percent of Goal')/
-#     pl.col('Target'),
-#     (pl.col('Voted') + pl.col('Reach Commit') + pl.col('VAN Commit')).alias('Combined Percent of Goal')/
-#     pl.col('Target') 
-#     )
-#     .with_columns(cs.contains('Percent').round(2))
-# )
+
 
 show(df1, 
      buttons = ['copy', 'excel'],
@@ -322,8 +329,6 @@ function (td, cellData, rowData, row, col) {
             ),
         }
     ],)
-
-# show(df1_agg)
 ```
 
 ## Row
