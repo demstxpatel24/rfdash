@@ -1,0 +1,56 @@
+--- 
+title: "Relational Futures Command Center"
+author: ""
+format: 
+  dashboard:
+    theme: lux
+    preview:
+      port: 1234
+    include-in-header:
+      text: |
+        <link rel="shortcut icon" href="favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+---
+
+```{r pkg-load}
+library(dplyr)
+library(leaflet)
+library(DT)
+library(ggplot2)
+library(plotly)
+library(crosstalk)
+library(arrow)
+```
+
+```{r data-load}
+data <- arrow::read_parquet('nc01.parquet')
+
+# create SharedData ----
+data_ct <-
+  data %>%
+  select(prec_id, enr_desc, county_nam, geometry, P, Vol, Vot) %>%
+  SharedData$new(key = ~prec_id, group = "loc")
+```
+
+```{r}
+lf <- leaflet(data_ct) %>% addTiles() %>% addMarkers()
+dt <- datatable(data_ct, fillContainer = TRUE, rownames = FALSE)
+gg <- ggplot(data_ct) +
+    aes(
+      x = Vol, 
+      y = Vot,
+      #col = pct_change,
+      name = county_nam) +
+    geom_point() +
+    guides(col = FALSE) +
+  labs(
+    x = "% Apr 2019 Trips on Weekend",
+    y = "% Change Apr 2020 vs 2019"
+  ) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent)
+gg_ly <- 
+  ggplotly(gg, tooltip = "name") %>%
+  highlight(on = "plotly_selected",
+            off = "plotly_doubleclick")
+```

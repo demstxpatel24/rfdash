@@ -25,6 +25,7 @@ import polars as pl
 import polars.selectors as cs
 import geopandas as gpd
 from itables import show, JavascriptFunction
+import numpy as np
 ```
 
 ```{python}
@@ -41,7 +42,7 @@ df_pct = gpd.read_parquet('nc01.parquet')
 #| icon: people
 #| color: primary
 dict(
-  value = 2460
+  value = 246
 )
 ```
 
@@ -83,15 +84,17 @@ dict(
 
 ## Row {.tabset}
 
-### Profiles
+### Metrics
 
 ```{python}
 df = pl.DataFrame({
-  'Name': ['Person A','Person B','Person C'],
-  'Network Size': [25, 32, 12],
-  'Surveyed': [20, 16, 11],
-  'Vote Plans': [18, 11, 11],
-  'Voted': [2, 5, 11]
+  'Name': ['Jignesh Patel','Maria Alvarez','Nishan Khan','Dawn Lin','Steve Okoroha','Ben Selnik'],
+  'Precinct': [3144,3029,2100,1452,4441,1286],
+  'Community': ['Gujarati','Venezuelan','Bangladeshi','Chinese','Nigerian','College'],
+  'Network Size': [48,52,95,143,63,41],
+  'Messages': [46,82,105,129,62,82],
+  'Vote Plans': [38,42,76,114,50,33],
+  'Voted':[35,37,68,103,45,30]
 })
 
 show(df)
@@ -138,13 +141,29 @@ fig.update_yaxes(range=[0,1])
 #                    fitbounds='locations'
 #                    )
 #fig_nc.update_layout(margin={'r': 0, 't': 0, 'l': 0, 'b': 0})
+
+df_pct =(
+  df_pct
+  .assign(P = np.random.beta(2,5,df_pct.shape[0]).round(2))
+  .assign(N = lambda d: d.P * d.Vol)
+)
+
 df_pct.explore(
-    column = 'Vol',
-    tooltop = 'Vol',
-    popup = True,
+    column = 'P',
+    tooltip = ['prec_id','county_nam','Vol','P'],
+    popup = ['prec_id','county_nam','Vol','P'],
     cmap="Blues",  # use "Set1" matplotlib colormap
     style_kwds=dict(color="black")
 )
+```
+
+```{python}
+px.scatter(df_pct, 
+           x = 'Vol', 
+           y = 'N',
+           color = 'P',
+           color_continuous_scale=px.colors.sequential.Blues,
+           title = 'Volunteers vs Voters (per 100k)')
 ```
 
 # Network
@@ -190,9 +209,8 @@ fig = px.bar(df, x="age_bin", y="pct_val",
                        'grp_bin': ''},
             color_discrete_sequence=px.colors.qualitative.T10,
              height=400)
-             
-fig.show()
 
+fig.show()
 ```
 
 #### Row {height=45%}
